@@ -1,6 +1,6 @@
-# rds-instance-restore
+# RDS Snapshot Restore
 
-The goal of this script is to restore a RDS snapshot based on the original instance configuration. <br />
+The goal of this script is to restore a RDS snapshot based on the original RDS instance. <br />
 It can be executed from both terminal (putty) or CloudShell.
 
 ## Limitations
@@ -14,7 +14,7 @@ After executed the script, you will have to provide:
 * **Snapshot name** that will be used to restore.
 * New RDS DB identifier.
 
-## Restore RDS features:
+## Restored instance features
 * No multi-AZ.
 * No public access.
 * Tags will be copied from snapshot.

@@ -1,6 +1,7 @@
 #!/bin/bash  
 ##################################################
-######### SCRIPT TO RESTORE RDS INSTANCE #########
+########  SCRIPT TO RESTORE A SNAPSHOT  ##########
+############  FROM AN EXISTING RDS  ##############
 ##################################################
 
 clear
@@ -9,6 +10,7 @@ read -p "Enter Region ID: " region
 
 read -p "Enter RDS instance name to restore the configuration from: " RDSDbIdentifier
 rds=$(aws rds describe-db-instances --db-instance-identifier $RDSDbIdentifier --region $region --query DBInstances[].DBInstanceIdentifier 2>/dev/null)
+
 # Check if the original RDS instance exist
 if [ -z "$rds" ]; then
 	echo -e "RDS Instance $RDSDbIdentifier does not exist or region is not correct!"
@@ -31,9 +33,21 @@ else
 		port=$(cat $RDSDbIdentifier.json | grep -w Port | cut -d ":" -f2 | cut -d "," -f1)
 		DBInstanceClass=$(cat $RDSDbIdentifier.json | grep DBInstanceClass | cut -d "\"" -f4)
 		license=$(cat $RDSDbIdentifier.json | grep LicenseModel | cut -d "\"" -f4)
+		multiaz=$(cat $RDSDbIdentifier.json | grep -w MultiAZ |egrep -o "true|false")
+		if [ $multiaz == false ]; then 
+			multiazresult="--no-multi-az"
+		else
+			multiazresult="--multi-az"
+		fi
+		publicaccess=$(cat $RDSDbIdentifier.json | grep -w PubliclyAccessible |egrep -o "true|false")
+		if [ $publicaccess == false ]; then 
+			publicaccessresult="--no-publicly-accessible"
+		else
+			publicaccessresult="--publicly-accessible"
+		fi
 			
 		#Restore snapshot command
-		aws rds restore-db-instance-from-db-snapshot --db-snapshot-identifier $SnapshotName --engine $engine --license-model $license --db-instance-identifier $NewRDSInstanceName --no-multi-az --db-subnet-group-name $DBSubnetGroupName --no-publicly-accessible --vpc-security-group-ids $VpcSGId --port $port --db-instance-class $DBInstanceClass --copy-tags-to-snapshot --region $region
+		aws rds restore-db-instance-from-db-snapshot --db-snapshot-identifier $SnapshotName --engine $engine --license-model $license --db-instance-identifier $NewRDSInstanceName --no-multi-az --db-subnet-group-name $DBSubnetGroupName --no-publicly-accessible --vpc-security-group-ids $VpcSGId --port $port --db-instance-class $DBInstanceClass --copy-tags-to-snapshot $multiazresult $publicaccessresult --region $region
 		
 		#Delete the JSON file
 		rm -rf $RDSDbIdentifier.json
